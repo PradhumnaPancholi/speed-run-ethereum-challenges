@@ -9,7 +9,11 @@ contract Staker {
   //to keep track of users' balance //
   mapping(address => uint256) public balances;
 
+  //threshold of staked ETH required //
   uint public constant threshold = 1 ether;
+
+  //deadline for staking//
+  uint public deadline = block.timestamp + 30 seconds;
   
   ExampleExternalContract public exampleExternalContract;
 
@@ -17,13 +21,14 @@ contract Staker {
       exampleExternalContract = ExampleExternalContract(exampleExternalContractAddress);
   }
 
-  function stake() public payable {
-    balances[msg.sender] += msg.value;
-  }
+  event Stake(address, uint256);
 
   // Collect funds in a payable `stake()` function and track individual `balances` with a mapping:
   // ( Make sure to add a `Stake(address,uint256)` event and emit it for the frontend <List/> display )
-
+  function stake() public payable {
+    balances[msg.sender] += msg.value;
+    emit Stake(msg.sender, msg.value);
+  }
 
   // After some `deadline` allow anyone to call an `execute()` function
   // If the deadline has passed and the threshold is met, it should call `exampleExternalContract.complete{value: address(this).balance}()`
