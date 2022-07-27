@@ -6,10 +6,19 @@ import "./ExampleExternalContract.sol";
 
 contract Staker {
 
+  //to keep track of users' balance //
+  mapping(address => uint256) public balances;
+
+  uint public constant threshold = 1 ether;
+  
   ExampleExternalContract public exampleExternalContract;
 
   constructor(address exampleExternalContractAddress) {
       exampleExternalContract = ExampleExternalContract(exampleExternalContractAddress);
+  }
+
+  function stake() public payable {
+    balances[msg.sender] += msg.value;
   }
 
   // Collect funds in a payable `stake()` function and track individual `balances` with a mapping:
