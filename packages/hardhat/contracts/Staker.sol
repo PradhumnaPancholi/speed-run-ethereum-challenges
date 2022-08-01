@@ -13,7 +13,7 @@ contract Staker {
   uint public constant threshold = 1 ether;
 
   //deadline for staking//
-  uint public deadline = block.timestamp + 30 seconds;
+  uint public deadline = block.timestamp + 50 seconds;
   
   bool public openForWithdraw = false;
   
@@ -27,10 +27,17 @@ contract Staker {
 
   event Withdraw(address staker, uint256 amount);
 
+  // this modifier will check if staked funds are already moved to the extern contract//
+  // this will protect "execute" and "withdraw" at higher level along side other guards //
+  modifier notCompleted {
+    require(exampleExternalContract.completed() == false, "Your staking threshold is complete");
+    _;
+  }
+
   // Collect funds in a payable `stake()` function and track individual `balances` with a mapping:
   // ( Make sure to add a `Stake(address,uint256)` event and emit it for the frontend <List/> display )
   function stake() public payable {
-    // ToDo: Need to add deadline verification//
+    require(deadline > block.timestamp, "Deadline has been passed, you can not stake anymore !");
     balances[msg.sender] += msg.value;
     emit Stake(msg.sender, msg.value);
   }
@@ -38,10 +45,12 @@ contract Staker {
 
   // After some `deadline` allow anyone to call an `execute()` function
   // If the deadline has passed and the threshold is met, it should call `exampleExternalContract.complete{value: address(this).balance}()`
-  function execute() public {
-    // require is used to show meaningful error message//
-    require(block.timestamp > deadline, "Deadline is not completed yet");
-    // if is used instead of require becasu we have a counter action//
+  function execute() public notCompleted {
+    //if excuted was performed succesfully before, show an error to reflect this//
+    require(!openForWithdraw, "Actions has been already performed!");
+    // if deadline is not passed, show error to refelct it//
+    require(block.timestamp > deadline, "Deadline is not completed yet!");
+    // if is used instead of require becasu we have a counter action to set "openForWithdraw" to true//
     if(address(this).balance >= threshold) {
       exampleExternalContract.complete{value: address(this).balance}();
     } else {
@@ -51,9 +60,8 @@ contract Staker {
   }
 
   // Add a `withdraw()` function to let users withdraw their balance
-  function withdraw()  external {
-    require(openForWithdraw, "Threshold was met, you can not withdraw");
-    // ToDo: update balances mapping //
+  function withdraw()  external notCompleted{
+    require(openForWithdraw, "Contract is not open for Withdrawals!");
     uint withdrawAmount = balances[msg.sender];
     balances[msg.sender] -= withdrawAmount; 
     (bool success, ) = (msg.sender).call{value: withdrawAmount}("");
