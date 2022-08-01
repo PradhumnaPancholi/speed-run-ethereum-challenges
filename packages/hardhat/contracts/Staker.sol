@@ -55,6 +55,7 @@ contract Staker {
     require(openForWithdraw, "Threshold was met, you can not withdraw");
     // ToDo: update balances mapping //
     uint withdrawAmount = balances[msg.sender];
+    balances[msg.sender] -= withdrawAmount; 
     (bool success, ) = (msg.sender).call{value: withdrawAmount}("");
     require(success, "Withdrawal Failed");
     emit Withdraw(msg.sender, withdrawAmount); 
@@ -70,6 +71,10 @@ contract Staker {
   }
 
   // Add the `receive()` special function that receives eth and calls stake()
+  receive() external payable {
+    //ToDo: deadline verification //
+    stake(); 
+  }
 
 
 }
